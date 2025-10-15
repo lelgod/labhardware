@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Semáforo em Assembly</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #2c3e50);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #bdc3c7;
+        }
+
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+        }
+
+        .traffic-light-container {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .traffic-light {
+            width: 180px;
+            height: 400px;
+            background: #333;
+            border-radius: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+            padding: 25px 0;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+
+        .light {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #111;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8);
+        }
+
+        .light.active.red {
+            background: #ff4444;
+            box-shadow: 0 0 30px #ff4444;
+        }
+
+        .light.active.yellow {
+            background: #ffcc00;
+            box-shadow: 0 0 30px #ffcc00;
+        }
+
+        .light.active.green {
+            background: #44ff44;
+            box-shadow: 0 0 30px #44ff44;
+        }
+
+        .code-container {
+            flex: 2;
+            min-width: 500px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .code-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .code-display {
+            background: #1e1e1e;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            height: 400px;
+            overflow-y: auto;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .code-line {
+            padding: 5px 10px;
+            margin: 2px 0;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .code-line.active {
+            background: rgba(41, 128, 185, 0.3);
+            border-left: 4px solid #3498db;
+        }
+
+        .code-line.comment {
+            color: #6a9955;
+        }
+
+        .code-line.label {
+            color: #dcdcaa;
+        }
+
+        .code-line.instruction {
+            color: #9cdcfe;
+        }
+
+        .code-line.register {
+            color: #569cd6;
+        }
+
+        .code-line.number {
+            color: #b5cea8;
+        }
+
+        .editable-time {
+            background: transparent;
+            border: 1px dashed #b5cea8;
+            color: #b5cea8;
+            width: 40px;
+            text-align: center;
+            margin: 0 5px;
+            padding: 2px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+        }
+
+        .editable-time:focus {
+            outline: none;
+            border: 1px solid #3498db;
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .mode-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .mode-btn.active {
+            background: rgba(52, 152, 219, 0.3);
+            border-color: #3498db;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        button {
+            padding: 12px 25px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #play-btn {
+            background: #2ecc71;
+            color: white;
+        }
+
+        #pause-btn {
+            background: #f39c12;
+            color: white;
+        }
+
+        #reset-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        #step-btn {
+            background: #3498db;
+            color: white;
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2rem;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .time-display {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-top: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .time-item {
+            text-align: center;
+        }
+
+        .time-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .time-red { color: #ff4444; }
+        .time-yellow { color: #ffcc00; }
+        .time-green { color: #44ff44; }
+
+        .counter {
+            font-size: 1rem;
+            margin-top: 5px;
+            color: #bdc3c7;
+        }
+
+        .explanation {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .explanation h2 {
+            margin-bottom: 15px;
+            color: #3498db;
+        }
+
+        .explanation p {
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .code-container, .traffic-light-container {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Simulador de Semáforo em Assembly</h1>
+            <p class="subtitle">Controle os tempos e escolha o modo de execução</p>
+        </header>
+
+        <div class="main-content">
+            <div class="traffic-light-container">
+                <h2>Semáforo</h2>
+                <div class="traffic-light">
+                    <div class="light red" id="red-light"></div>
+                    <div class="light yellow" id="yellow-light"></div>
+                    <div class="light green" id="green-light"></div>
+                </div>
+                <div class="status" id="status">Estado: Vermelho</div>
+                <div class="time-display">
+                    <div class="time-item">
+                        <div>Vermelho</div>
+                        <div class="time-value time-red" id="red-time">5</div>
+                        <div class="counter" id="red-counter">0/5</div>
+                    </div>
+                    <div class="time-item">
+                        <div>Amarelo</div>
+                        <div class="time-value time-yellow" id="yellow-time">2</div>
+                        <div class="counter" id="yellow-counter">0/2</div>
+                    </div>
+                    <div class="time-item">
+                        <div>Verde</div>
+                        <div class="time-value time-green" id="green-time">5</div>
+                        <div class="counter" id="green-counter">0/5</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-container">
+                <div class="code-header">
+                    <div class="code-title">Código Assembly</div>
+                    <div class="code-info">Linha atual: <span id="current-line">1</span></div>
+                </div>
+                <div class="code-display" id="code-display">
+                    <!-- O código será inserido aqui via JavaScript -->
+                </div>
+                <div class="controls">
+                    <div class="mode-selector">
+                        <div class="mode-btn active" id="mode-step">Modo Passo a Passo</div>
+                        <div class="mode-btn" id="mode-auto">Modo Automático</div>
+                    </div>
+                    <div class="action-buttons">
+                        <button id="play-btn">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M3 2l10 6-10 6z"/>
+                            </svg>
+                            Executar
+                        </button>
+                        <button id="pause-btn" disabled>
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <rect x="4" y="2" width="3" height="12"/>
+                                <rect x="9" y="2" width="3" height="12"/>
+                            </svg>
+                            Pausar
+                        </button>
+                        <button id="step-btn">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M5 2l8 6-8 6z"/>
+                            </svg>
+                            Passo
+                        </button>
+                        <button id="reset-btn">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M8 2v4l4-2-4-2zm0 8v4l4-2-4-2z"/>
+                            </svg>
+                            Reiniciar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="explanation">
+            <h2>Como Funciona</h2>
+            <p>Este simulador mostra como um semáforo pode ser controlado por um programa em Assembly. Você pode escolher entre dois modos de execução:</p>
+            <p><strong>Modo Passo a Passo:</strong> Executa o código linha por linha, mostrando cada instrução sendo processada.</p>
+            <p><strong>Modo Automático:</strong> Executa o semáforo respeitando os tempos configurados para cada luz, sem mostrar as linhas de código individualmente.</p>
+            <p>Edite os tempos de duração de cada luz diretamente no código Assembly clicando nos valores destacados.</p>
+        </div>
+    </div>
+
+    <script>
+        // Código Assembly para o semáforo
+        const assemblyCode = [
+            { text: "; SEMAFORO.ASM - Controle de semáforo", type: "comment" },
+            { text: "; Autor: Simulador Educativo", type: "comment" },
+            { text: "", type: "empty" },
+            { text: "START:", type: "label" },
+            { text: "    MOV R0, #0        ; Inicializa contador", type: "instruction" },
+            { text: "    MOV R1, #1        ; Estado: Vermelho", type: "instruction" },
+            { text: "", type: "empty" },
+            { text: "VERMELHO:", type: "label" },
+            { text: "    MOV R2, #", type: "instruction", timeValue: true, timeType: "red", defaultValue: 5 },
+            { text: "        ; Tempo do vermelho (segundos)", type: "comment" },
+            { text: "    CALL ACENDER_VERMELHO", type: "instruction" },
+            { text: "VERMELHO_LOOP:", type: "label" },
+            { text: "    CMP R0, R2        ; Compara contador com tempo", type: "instruction" },
+            { text: "    BGE VERDE         ; Se contador >= tempo, vai para verde", type: "instruction" },
+            { text: "    ADD R0, R0, #1    ; Incrementa contador", type: "instruction" },
+            { text: "    JMP VERMELHO_LOOP ; Continua no loop", type: "instruction" },
+            { text: "", type: "empty" },
+            { text: "VERDE:", type: "label" },
+            { text: "    MOV R0, #0        ; Reseta contador", type: "instruction" },
+            { text: "    MOV R1, #2        ; Estado: Verde", type: "instruction" },
+            { text: "    MOV R2, #", type: "instruction", timeValue: true, timeType: "green", defaultValue: 5 },
+            { text: "        ; Tempo do verde (segundos)", type: "comment" },
+            { text: "    CALL ACENDER_VERDE", type: "instruction" },
+            { text: "VERDE_LOOP:", type: "label" },
+            { text: "    CMP R0, R2        ; Compara contador com tempo", type: "instruction" },
+            { text: "    BGE AMARELO       ; Se contador >= tempo, vai para amarelo", type: "instruction" },
+            { text: "    ADD R0, R0, #1    ; Incrementa contador", type: "instruction" },
+            { text: "    JMP VERDE_LOOP    ; Continua no loop", type: "instruction" },
+            { text: "", type: "empty" },
+            { text: "AMARELO:", type: "label" },
+            { text: "    MOV R0, #0        ; Reseta contador", type: "instruction" },
+            { text: "    MOV R1, #3        ; Estado: Amarelo", type: "instruction" },
+            { text: "    MOV R2, #", type: "instruction", timeValue: true, timeType: "yellow", defaultValue: 2 },
+            { text: "        ; Tempo do amarelo (segundos)", type: "comment" },
+            { text: "    CALL ACENDER_AMARELO", type: "instruction" },
+            { text: "AMARELO_LOOP:", type: "label" },
+            { text: "    CMP R0, R2        ; Compara contador com tempo", type: "instruction" },
+            { text: "    BGE VERMELHO      ; Se contador >= tempo, vai para vermelho", type: "instruction" },
+            { text: "    ADD R0, R0, #1    ; Incrementa contador", type: "instruction" },
+            { text: "    JMP AMARELO_LOOP  ; Continua no loop", type: "instruction" },
+            { text: "", type: "empty" },
+            { text: "ACENDER_VERMELHO:", type: "label" },
+            { text: "    ; Acende luz vermelha, apaga outras", type: "comment" },
+            { text: "    MOV [0x1000], #1  ; Endereço do LED vermelho", type: "instruction" },
+            { text: "    MOV [0x1001], #0  ; Endereço do LED amarelo", type: "instruction" },
+            { text: "    MOV [0x1002], #0  ; Endereço do LED verde", type: "instruction" },
+            { text: "    RET", type: "instruction" },
+            { text: "", type: "empty" },
+            { text: "ACENDER_VERDE:", type: "label" },
+            { text: "    ; Acende luz verde, apaga outras", type: "comment" },
+            { text: "    MOV [0x1000], #0  ; Endereço do LED vermelho", type: "instruction" },
+            { text: "    MOV [0x1001], #0  ; Endereço do LED amarelo", type: "instruction" },
+            { text: "    MOV [0x1002], #1  ; Endereço do LED verde", type: "instruction" },
+            { text: "    RET", type: "instruction" },
+            { text: "", type: "empty" },
+            { text: "ACENDER_AMARELO:", type: "label" },
+            { text: "    ; Acende luz amarela, apaga outras", type: "comment" },
+            { text: "    MOV [0x1000], #0  ; Endereço do LED vermelho", type: "instruction" },
+            { text: "    MOV [0x1001], #1  ; Endereço do LED amarelo", type: "instruction" },
+            { text: "    MOV [0x1002], #0  ; Endereço do LED verde", type: "instruction" },
+            { text: "    RET", type: "instruction" },
+            { text: "", type: "empty" },
+            { text: "END START", type: "instruction" }
+        ];
+
+        // Elementos DOM
+        const codeDisplay = document.getElementById('code-display');
+        const currentLineSpan = document.getElementById('current-line');
+        const redLight = document.getElementById('red-light');
+        const yellowLight = document.getElementById('yellow-light');
+        const greenLight = document.getElementById('green-light');
+        const statusDiv = document.getElementById('status');
+        const redTimeDisplay = document.getElementById('red-time');
+        const yellowTimeDisplay = document.getElementById('yellow-time');
+        const greenTimeDisplay = document.getElementById('green-time');
+        const redCounter = document.getElementById('red-counter');
+        const yellowCounter = document.getElementById('yellow-counter');
+        const greenCounter = document.getElementById('green-counter');
+        
+        // Botões de controle
+        const playBtn = document.getElementById('play-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const stepBtn = document.getElementById('step-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const modeStepBtn = document.getElementById('mode-step');
+        const modeAutoBtn = document.getElementById('mode-auto');
+
+        // Estado da simulação
+        let currentLine = 0;
+        let isPlaying = false;
+        let playInterval;
+        let currentState = "VERMELHO";
+        let executionMode = "step"; // "step" ou "auto"
+        let timeValues = {
+            red: 5,
+            yellow: 2,
+            green: 5
+        };
+        let currentCounters = {
+            red: 0,
+            yellow: 0,
+            green: 0
+        };
+
+        // Inicializar o código na tela
+        function initializeCode() {
+            codeDisplay.innerHTML = '';
+            assemblyCode.forEach((line, index) => {
+                const lineElement = document.createElement('div');
+                lineElement.className = `code-line ${line.type}`;
+                lineElement.dataset.line = index;
+                
+                if (line.timeValue) {
+                    // Linha com valor de tempo editável
+                    const textBefore = document.createTextNode(line.text);
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'editable-time';
+                    input.value = timeValues[line.timeType] || line.defaultValue;
+                    input.dataset.timeType = line.timeType;
+                    
+                    input.addEventListener('change', function() {
+                        const newValue = parseInt(this.value);
+                        if (!isNaN(newValue) && newValue > 0) {
+                            timeValues[this.dataset.timeType] = newValue;
+                            updateTimeDisplays();
+                        } else {
+                            this.value = timeValues[this.dataset.timeType];
+                        }
+                    });
+                    
+                    const textAfter = document.createTextNode(line.type === 'instruction' ? 
+                        '        ; Tempo do ' + getColorName(line.timeType) + ' (segundos)' : '');
+                    
+                    lineElement.appendChild(textBefore);
+                    lineElement.appendChild(input);
+                    lineElement.appendChild(textAfter);
+                } else {
+                    // Linha normal
+                    lineElement.textContent = line.text;
+                }
+                
+                codeDisplay.appendChild(lineElement);
+            });
+            highlightCurrentLine();
+            updateTimeDisplays();
+        }
+
+        // Obter nome da cor em português
+        function getColorName(type) {
+            switch(type) {
+                case 'red': return 'vermelho';
+                case 'yellow': return 'amarelo';
+                case 'green': return 'verde';
+                default: return type;
+            }
+        }
+
+        // Atualizar displays de tempo
+        function updateTimeDisplays() {
+            redTimeDisplay.textContent = timeValues.red;
+            yellowTimeDisplay.textContent = timeValues.yellow;
+            greenTimeDisplay.textContent = timeValues.green;
+            
+            redCounter.textContent = `${currentCounters.red}/${timeValues.red}`;
+            yellowCounter.textContent = `${currentCounters.yellow}/${timeValues.yellow}`;
+            greenCounter.textContent = `${currentCounters.green}/${timeValues.green}`;
+        }
+
+        // Destacar a linha atual
+        function highlightCurrentLine() {
+            document.querySelectorAll('.code-line').forEach(line => {
+                line.classList.remove('active');
+            });
+            
+            if (currentLine < assemblyCode.length) {
+                const currentLineElement = document.querySelector(`.code-line[data-line="${currentLine}"]`);
+                if (currentLineElement) {
+                    currentLineElement.classList.add('active');
+                    currentLineElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+            
+            currentLineSpan.textContent = currentLine + 1;
+        }
+
+        // Atualizar o semáforo
+        function updateTrafficLight() {
+            // Apagar todas as luzes
+            redLight.classList.remove('active');
+            yellowLight.classList.remove('active');
+            greenLight.classList.remove('active');
+            
+            // Acender a luz atual baseada no estado
+            if (currentState === "VERMELHO") {
+                redLight.classList.add('active');
+                statusDiv.textContent = `Estado: Vermelho (${currentCounters.red}/${timeValues.red}s)`;
+            } else if (currentState === "VERDE") {
+                greenLight.classList.add('active');
+                statusDiv.textContent = `Estado: Verde (${currentCounters.green}/${timeValues.green}s)`;
+            } else if (currentState === "AMARELO") {
+                yellowLight.classList.add('active');
+                statusDiv.textContent = `Estado: Amarelo (${currentCounters.yellow}/${timeValues.yellow}s)`;
+            }
+            
+            updateTimeDisplays();
+        }
+
+        // Executar um passo da simulação (modo passo a passo)
+        function executeStep() {
+            if (currentLine >= assemblyCode.length) {
+                currentLine = 0; // Volta ao início quando chega ao fim
+            }
+            
+            const line = assemblyCode[currentLine];
+            
+            // Simular mudanças de estado baseadas no código
+            if (line.text.includes("VERMELHO:")) {
+                currentState = "VERMELHO";
+                currentCounters.red = 0;
+                updateTrafficLight();
+            } else if (line.text.includes("VERDE:")) {
+                currentState = "VERDE";
+                currentCounters.green = 0;
+                updateTrafficLight();
+            } else if (line.text.includes("AMARELO:")) {
+                currentState = "AMARELO";
+                currentCounters.yellow = 0;
+                updateTrafficLight();
+            }
+            
+            // Simular incremento do contador
+            if (line.text.includes("ADD R0, R0, #1")) {
+                if (currentState === "VERMELHO") currentCounters.red++;
+                else if (currentState === "VERDE") currentCounters.green++;
+                else if (currentState === "AMARELO") currentCounters.yellow++;
+                updateTrafficLight();
+            }
+            
+            currentLine++;
+            highlightCurrentLine();
+            
+            // Se chegou ao fim, reinicia
+            if (currentLine >= assemblyCode.length) {
+                currentLine = 0;
+            }
+        }
+
+        // Executar um ciclo do semáforo (modo automático)
+        function executeAutoCycle() {
+            if (currentState === "VERMELHO") {
+                currentCounters.red++;
+                if (currentCounters.red >= timeValues.red) {
+                    currentState = "VERDE";
+                    currentCounters.red = 0;
+                    currentCounters.green = 0;
+                }
+            } else if (currentState === "VERDE") {
+                currentCounters.green++;
+                if (currentCounters.green >= timeValues.green) {
+                    currentState = "AMARELO";
+                    currentCounters.green = 0;
+                    currentCounters.yellow = 0;
+                }
+            } else if (currentState === "AMARELO") {
+                currentCounters.yellow++;
+                if (currentCounters.yellow >= timeValues.yellow) {
+                    currentState = "VERMELHO";
+                    currentCounters.yellow = 0;
+                    currentCounters.red = 0;
+                }
+            }
+            
+            updateTrafficLight();
+        }
+
+        // Iniciar execução automática
+        function startExecution() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            playBtn.disabled = true;
+            pauseBtn.disabled = false;
+            
+            if (executionMode === "step") {
+                playInterval = setInterval(() => {
+                    executeStep();
+                }, 1000);
+            } else {
+                playInterval = setInterval(() => {
+                    executeAutoCycle();
+                }, 1000);
+            }
+        }
+
+        // Pausar execução
+        function pauseExecution() {
+            if (!isPlaying) return;
+            
+            isPlaying = false;
+            playBtn.disabled = false;
+            pauseBtn.disabled = true;
+            
+            clearInterval(playInterval);
+        }
+
+        // Reiniciar simulação
+        function resetSimulation() {
+            pauseExecution();
+            currentLine = 0;
+            currentState = "VERMELHO";
+            currentCounters = {
+                red: 0,
+                yellow: 0,
+                green: 0
+            };
+            updateTrafficLight();
+            if (executionMode === "step") {
+                highlightCurrentLine();
+            }
+        }
+
+        // Alternar modo de execução
+        function setExecutionMode(mode) {
+            executionMode = mode;
+            
+            modeStepBtn.classList.toggle('active', mode === 'step');
+            modeAutoBtn.classList.toggle('active', mode === 'auto');
+            
+            // Mostrar/ocultar elementos baseados no modo
+            if (mode === 'step') {
+                codeDisplay.style.display = 'block';
+                currentLineSpan.style.display = 'inline';
+                stepBtn.disabled = false;
+                highlightCurrentLine();
+            } else {
+                codeDisplay.style.display = 'none';
+                currentLineSpan.style.display = 'none';
+                stepBtn.disabled = true;
+            }
+            
+            // Reiniciar se estiver executando
+            if (isPlaying) {
+                pauseExecution();
+                resetSimulation();
+            }
+        }
+
+        // Event listeners
+        playBtn.addEventListener('click', startExecution);
+        pauseBtn.addEventListener('click', pauseExecution);
+        stepBtn.addEventListener('click', executeStep);
+        resetBtn.addEventListener('click', resetSimulation);
+        modeStepBtn.addEventListener('click', () => setExecutionMode('step'));
+        modeAutoBtn.addEventListener('click', () => setExecutionMode('auto'));
+
+        // Inicializar
+        initializeCode();
+        updateTrafficLight();
+    </script>
+</body>
+</html>
